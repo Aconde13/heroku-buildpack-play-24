@@ -75,6 +75,29 @@ javaVersion="1.8"
 install_openjdk "$javaVersion" "$BUILD_DIR" "$BIN_DIR"
 echo "       Done installing OpenJDK"
 
+
+# --- Compile OpenSSL 1.1.1u ---
+OPENSSL_VERSION="1.1.1u"
+OPENSSL_DIR=".openssl"
+
+if [ ! -d "$BUILD_DIR/$OPENSSL_DIR" ]; then
+  echo "-----> Downloading and compiling OpenSSL $OPENSSL_VERSION..."
+  curl -LO "https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz"
+  tar -xzf "openssl-${OPENSSL_VERSION}.tar.gz"
+  cd "openssl-${OPENSSL_VERSION}"
+
+  ./config --prefix="$BUILD_DIR/$OPENSSL_DIR" --openssldir="$BUILD_DIR/$OPENSSL_DIR"
+  make -j$(nproc)
+  make install
+
+  cd "$BUILD_DIR"
+  rm -rf "openssl-${OPENSSL_VERSION}" "openssl-${OPENSSL_VERSION}.tar.gz"
+
+  echo "-----> OpenSSL $OPENSSL_VERSION installed at $OPENSSL_DIR"
+fi
+
+
+# Restore Play and Ivy cache
 PLAY_PATH=".play"
 IVY_PATH=".ivy2"
 
@@ -152,6 +175,10 @@ EOF
 PY2_PROFILE="$BUILD_DIR/.profile.d/python2.sh"
 mkdir -p "$(dirname "$PY2_PROFILE")"
 echo 'export PATH="/app/.python2/bin:$PATH"' > "$PY2_PROFILE"
+
+cat <<EOF > "$BUILD_DIR/.profile.d/mongo.sh"
+export LD_LIBRARY_PATH="/app/.openssl/lib:\$LD_LIBRARY_PATH"
+EOF
 
 # Clean build-time dependencies
 rm -rf "$IVY_PATH"
