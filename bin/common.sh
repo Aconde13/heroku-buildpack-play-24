@@ -38,12 +38,8 @@ check_compile_status() {
 download_play_official() {
   local playVersion=${1}
   local playTarFile=${2}
-  local playZipFile="play-${playVersion}.zip"  
-  local playUrl="https://github.com/Cliengo/heroku-buildpack-play/releases/download/v26/play-1.4.5.zip"
-  
-  if [[ "$playVersion" > "1.6.0" ]]; then
-    playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
-  fi
+  local playZipFile="play-1.4.5.zip"
+  local playUrl="https://github.com/Cliengo/heroku-buildpack-play-24/releases/download/heroku-24/play-1.4.5.zip"
 
   curl --retry 3 -s -O -L ${playUrl}
 
@@ -52,12 +48,12 @@ download_play_official() {
   mkdir -p ${playUnzipDir}
   
   echo "Zip file: $playZipFile"
-  if [ ! -f "play-1.4.5.zip" ]; then
+  if [ ! -f ${playZipFile} ]; then
     echo "Error: Zip file not found."
     exit 1
   fi
   
-  unzip "play-1.4.5.zip" -d ${playUnzipDir} > /dev/null 2>&1
+  unzip ${playZipFile} -d ${playUnzipDir} > /dev/null 2>&1
 
   PLAY_BUILD_DIR=$(find ${playUnzipDir} -name 'framework' -type d | sed 's/framework//')
 
@@ -147,7 +143,7 @@ install_openjdk() {
 
   # For demo: download Azul Zulu JDK 8 Linux x64 tar.gz
   if [[ "$java_version" == "1.8" || "$java_version" == "8" ]]; then
-    JDK_URL="https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251398_0d8f12bc927a4e2c9f8568ca567db4ee"
+    JDK_URL="https://github.com/Cliengo/heroku-buildpack-play-24/releases/download/heroku-24/jre-8u431-linux-x64.tar.gz"
   else
     echo "Unsupported Java version $java_version"
     exit 1

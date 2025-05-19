@@ -16,7 +16,7 @@ PYTHON2_BUILD_DIR="Python-${PYTHON2_VERSION}"
 
 if [ ! -d "$BUILD_DIR/$PYTHON2_DIR" ]; then
   echo "-----> Downloading and compiling Python ${PYTHON2_VERSION}..."
-  curl -L -o python2.tgz "https://www.python.org/ftp/python/${PYTHON2_VERSION}/Python-${PYTHON2_VERSION}.tgz"
+  curl -L -o python2.tgz "https://github.com/Cliengo/heroku-buildpack-play-24/releases/download/heroku-24/Python-2.7.18.tgz"
 
   tar -xzf python2.tgz
   rm python2.tgz
@@ -59,8 +59,6 @@ export LD_LIBRARY_PATH="/app/.python2/lib:\$LD_LIBRARY_PATH"
 /app/.play/play "\$@"
 EOF
 chmod +x "$BUILD_DIR/.play-wrapper"
-
-
 
 export_env_dir "$ENV_DIR"
 
