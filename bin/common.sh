@@ -41,6 +41,10 @@ download_play_official() {
   local playZipFile="play-1.4.5.zip"
   local playUrl="https://github.com/Cliengo/heroku-buildpack-play-24/releases/download/heroku-24/play-1.4.5.zip"
 
+  if [[ "$playVersion" > "1.6.0" ]]; then
+    playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
+  fi
+
   curl --retry 3 -s -O -L ${playUrl}
 
   echo "Preparing binary package..." 
@@ -63,7 +67,7 @@ download_play_official() {
   # Copiar todo directo a .play (no a tmp/.play)
   cp -r "$PLAY_BUILD_DIR/framework/dependencies.yml" .play/framework
   cp -r "$PLAY_BUILD_DIR/framework/lib/" .play/framework
-  cp "$PLAY_BUILD_DIR/framework/play-1.4.5.jar" .play/framework
+  cp -r $PLAY_BUILD_DIR/framework/play-*.jar       tmp/.play/framework
   cp -r "$PLAY_BUILD_DIR/framework/pym/" .play/framework
   cp -r "$PLAY_BUILD_DIR/framework/src/play/version" .play/framework/src/play
   cp -r "$PLAY_BUILD_DIR/framework/templates/" .play/framework
