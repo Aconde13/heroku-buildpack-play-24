@@ -171,7 +171,7 @@ rm -rf "$IVY_PATH"
 remove_play "$BUILD_DIR" "$PLAY_VERSION"
 
 # --- Procfile por defecto si no existe ---
-if [ ! -f Procfile ]; then
-  echo "-----> No Procfile found. Default process: "
-  echo "       play run --http.port=$PORT $PLAY_OPTS"
-fi
+# if [ ! -f Procfile ]; then
+#  echo "-----> No Procfile found. Default process: "
+#  echo "       play run --http.port=$PORT $PLAY_OPTS"
+# fi
