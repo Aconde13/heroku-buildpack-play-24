@@ -19,9 +19,9 @@ export_env_dir "$ENV_DIR" || true
 # --- Asegurar cache dir ---
 mkdir -p "$CACHE_DIR"
 
-# --- Java 1.8 por defecto si no hay system.properties ---
+# --- Java 11 por defecto si no hay system.properties ---
 if [ ! -f "$BUILD_DIR/system.properties" ]; then
-  echo "java.runtime.version=1.8" > "$BUILD_DIR/system.properties"
+  echo "java.runtime.version=11" > "$BUILD_DIR/system.properties"
 fi
 
 # --- Instalar Python 2.7 portable (para tooling de Play 1) ---
@@ -73,10 +73,10 @@ export LD_LIBRARY_PATH="/app/.python2/lib:$LD_LIBRARY_PATH"
 EOF
 chmod +x "$BUILD_DIR/.play-wrapper"
 
-# --- Instalar OpenJDK 1.8 (lo hace common.sh con /usr/bin/curl) ---
-echo "-----> Installing OpenJDK..."
-install_openjdk "1.8" "$BUILD_DIR" "$BIN_DIR"
-echo "       Done installing OpenJDK"
+# --- Instalar OpenJDK 11 (lo hace common.sh con /usr/bin/curl) ---
+echo "-----> Installing OpenJDK 11..."
+install_openjdk "11" "$BUILD_DIR" "$BIN_DIR"
+echo "       Done installing OpenJDK 11"
 
 # **AQUÍ** exportamos JAVA_HOME y actualizamos PATH para que Play lo vea durante el build
 export JAVA_HOME="$BUILD_DIR/.jdk"
