@@ -10,10 +10,6 @@ ENV_DIR="$3"
 BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$BIN_DIR/common.sh"
 
-# Añadir Python 3 para heroku-24 (no requiere tocar el repo de la app)
-install_python3 "$BUILD_DIR"
-echo "python3 available? $(/bin/bash -lc 'command -v python3 || true')"
-
 # --- Utilidad para imprimir con indent ---
 indent() { while IFS= read -r line; do printf '       %s\n' "$line"; done; }
 
