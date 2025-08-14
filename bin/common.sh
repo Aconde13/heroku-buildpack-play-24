@@ -75,17 +75,20 @@ install_openjdk() {
   local JDK_DIR="${build_dir}/.jdk"
   mkdir -p "${JDK_DIR}"
 
-  # Construir URL si no está definida externamente
+  # URL por defecto según versión solicitada
   local JDK_URL_LOCAL=""
   if [[ "$java_version" == "1.8" || "$java_version" == "8" ]]; then
-    # Default probado en tu fork (JRE 8u431)
+    # JRE 8 (tu release actual)
     JDK_URL_LOCAL="https://github.com/Cliengo/heroku-buildpack-play-24/releases/download/heroku-24/jre-8u431-linux-x64.tar.gz"
+  elif [[ "$java_version" == "11" || "$java_version" == "11."* ]]; then
+    # JDK 11 LTS (OpenLogic build; Linux x64, compatible con Heroku-24)
+    JDK_URL_LOCAL="https://builds.openlogic.com/downloadJDK/openlogic-openjdk/11.0.28+8/linux/x64/openlogic-openjdk-11.0.28+8-linux-x64.tar.gz"
   else
     echo "Unsupported Java version ${java_version}"
     exit 1
-  fi
+  fi`
 
-  # Permitir override si alguien exportó JDK_URL antes de llamar
+  # Permitir override vía env var JDK_URL
   local EFFECTIVE_JDK_URL="${JDK_URL:-$JDK_URL_LOCAL}"
 
   echo "Downloading JDK from: ${EFFECTIVE_JDK_URL}"
