@@ -193,3 +193,21 @@ remove_play() {
   rm -rf "${build_dir}/tmp-play-unzipped"
   rm -f "${build_dir}/play-${play_version}.zip"
 }
+
+install_python3() {
+  local build_dir="$1"
+  local py_dir="$build_dir/.python3"
+  mkdir -p "$py_dir"
+
+  # Python 3 portable para Linux x64 (compatible con heroku-24)
+  local url="https://cdn.heroku.com/buildpack-python/portable-python/3.12.3/linux-x64.tar.gz"
+
+  echo "Installing portable Python3 from: $url"
+  /usr/bin/curl -sSL "$url" | tar xz -C "$py_dir" --strip-components=1
+
+  # Export en runtime para que 'python3' esté en el PATH del dyno
+  mkdir -p "$build_dir/.profile.d"
+  cat > "$build_dir/.profile.d/python3.sh" <<'EOF'
+export PATH="/app/.python3/bin:$PATH"
+EOF
+}
