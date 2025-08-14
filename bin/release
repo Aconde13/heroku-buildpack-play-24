@@ -1,22 +1,17 @@
 #!/usr/bin/env bash
 # bin/release <build-dir>
+set -euo pipefail
 
 BUILD_DIR="$1"
 
-# Mensajes de debug SOLO a stderr (no contaminan el YAML)
-echo ">>> [DEBUG] bin/release ejecutado (BUILD_DIR=$BUILD_DIR)" >&2
-
-# Si la app NO trae Procfile, definimos el proceso web por defecto
+# Si NO hay Procfile en la app, publicamos el proceso web por defecto
 if [ ! -f "$BUILD_DIR/Procfile" ]; then
-  cat <<'YAML'
----
-default_process_types:
-  web: ./.play/play run --http.port=$PORT $PLAY_OPTS
-YAML
+  # Escribe YAML puro a stdout (sin heredocs, sin expansión, sin eco previo)
+  printf '%s\n' '---' \
+                'default_process_types:' \
+                '  web: ./.play/play run --http.port=$PORT $PLAY_OPTS'
 else
-  # Si hay Procfile, igual debemos emitir YAML válido (vacío)
-  cat <<'YAML'
----
-default_process_types: {}
-YAML
+  # Si hay Procfile, igual devolvemos YAML válido
+  printf '%s\n' '---' \
+                'default_process_types: {}'
 fi
