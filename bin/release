@@ -1,24 +1,22 @@
 #!/usr/bin/env bash
 # bin/release <build-dir>
 
-echo ">>> [DEBUG] bin/release ejecutado" >&2
+BUILD_DIR="$1"
 
-BUILD_DIR=$1
+# Mensajes de debug SOLO a stderr (no contaminan el YAML)
+echo ">>> [DEBUG] bin/release ejecutado (BUILD_DIR=$BUILD_DIR)" >&2
 
-cat <<EOF
+# Si la app NO trae Procfile, definimos el proceso web por defecto
+if [ ! -f "$BUILD_DIR/Procfile" ]; then
+  cat <<'YAML'
 ---
-config_vars:
-  #JAVA_OPTS: -Xmx384m -Xss512k -XX:+UseCompressedOops
-  #PLAY_OPTS: --%prod -Dprecompiled=true
-  
-addons:
-  #heroku-postgresql
-  
-EOF
-
-if [ ! -f $BUILD_DIR/Procfile ]; then
-cat <<EOF
 default_process_types:
-  web:    play run --http.port=\$PORT \$PLAY_OPTS
-EOF
+  web: ./.play/play run --http.port=$PORT $PLAY_OPTS
+YAML
+else
+  # Si hay Procfile, igual debemos emitir YAML válido (vacío)
+  cat <<'YAML'
+---
+default_process_types: {}
+YAML
 fi
