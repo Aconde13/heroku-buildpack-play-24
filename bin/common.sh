@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Forzar uso de curl del sistema y agregar debug
+set -e
+export PATH="/usr/bin:/bin:$PATH"
+CURL="/usr/bin/curl"
+echo "Using curl at: $(command -v curl)"
+$CURL --version || true
+
 indent() {
   while IFS= read -r line; do
     printf '       %s\n' "$line"
@@ -21,9 +28,10 @@ export_env_dir() {
 get_play_version() {
   local file=${1?"No file specified"}
   if [ ! -f "$file" ]; then
+    echo ""
     return 0
   fi
-  grep -P '.*-.*play[ \t]+[0-9\.]' "$file" | sed -E -e 's/[ \t]*-[ \t]*play[ \t]+([0-9A-Za-z\.]*).*/\1/'
+  grep -P '.*-.*play[ \t]+[0-9\.]+' "$file" | sed -E -e 's/[ \t]*-[ \t]*play[ \t]+([0-9A-Za-z\.]*).*/\1/'
 }
 
 check_compile_status() {
@@ -38,16 +46,23 @@ check_compile_status() {
 download_play_official() {
   local playVersion=${1}
   local playTarFile=${2}
-  local playZipFile="play-1.4.5.zip"
+
+  if [ -z "$playVersion" ]; then
+    echo "ERROR: playVersion vacío, no se puede descargar Play!"
+    exit 1
+  fi
+
+  local playZipFile="play-${playVersion}.zip"
   local playUrl="https://github.com/Cliengo/heroku-buildpack-play-24/releases/download/heroku-24/play-1.4.5.zip"
 
   if [[ "$playVersion" > "1.6.0" ]]; then
     playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
   fi
 
-  curl --retry 3 -s -O -L ${playUrl}
+  echo "Downloading Play! from: ${playUrl}"
+  $CURL --retry 3 -sS -O -L --fail "${playUrl}"
 
-  echo "Preparing binary package..." 
+  echo "Preparing binary package..."
   local playUnzipDir="tmp-play-unzipped/"
   mkdir -p ${playUnzipDir}
   
@@ -61,13 +76,15 @@ download_play_official() {
 
   PLAY_BUILD_DIR=$(find ${playUnzipDir} -name 'framework' -type d | sed 's/framework//')
 
-  # Asegurarse que el directorio destino existe
+  # Crear estructura de .play
   mkdir -p .play/framework/src/play
+  mkdir -p .play/framework/pym
+  mkdir -p .play/modules
+  mkdir -p .play/resources
 
-  # Copiar todo directo a .play (no a tmp/.play)
   cp -r "$PLAY_BUILD_DIR/framework/dependencies.yml" .play/framework
   cp -r "$PLAY_BUILD_DIR/framework/lib/" .play/framework
-  cp -r $PLAY_BUILD_DIR/framework/play-*.jar       tmp/.play/framework
+  cp -r "$PLAY_BUILD_DIR/framework/play-"*.jar .play/framework
   cp -r "$PLAY_BUILD_DIR/framework/pym/" .play/framework
   cp -r "$PLAY_BUILD_DIR/framework/src/play/version" .play/framework/src/play
   cp -r "$PLAY_BUILD_DIR/framework/templates/" .play/framework
@@ -76,13 +93,8 @@ download_play_official() {
   cp -r "$PLAY_BUILD_DIR/play" .play
   cp -r "$PLAY_BUILD_DIR/resources" .play
 
-  # Ya no eliminar tmp/ porque no la usamos más
-  # rm -fr tmp/
-
-  # Finalmente dar permisos
   chmod +x .play/play
 }
-
 
 validate_play_version() {
   local playVersion=${1}
@@ -96,46 +108,7 @@ validate_play_version() {
   fi
 }
 
-
-export_env_dir() {
-  env_dir=$1
-  whitelist_regex=${2:-''}
-  blacklist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH|JAVA_OPTS)$'}
-  if [ -d "$env_dir" ]; then
-    for e in $(ls "$env_dir"); do
-      echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
-      export "$e=$(cat "$env_dir/$e")"
-      :
-    done
-  fi
-}
-
-get_play_version() {
-  local file=${1?"No file specified"}
-
-  if [ ! -f "$file" ]; then
-    echo ""
-    return 0
-  fi
-
-  # parse dependencies.yml for play version, example line: "- play 1.4.5"
-  grep -P '.*-.*play[ \t]+[0-9\.]+' "$file" | sed -E -e 's/[ \t]*-[ \t]*play[ \t]+([0-9A-Za-z\.]*).*/\1/'
-}
-
-check_compile_status() {
-  # check last two piped commands exit status (assumes usage in eval | sed)
-  local arr=("${PIPESTATUS[@]}")
-  for s in "${arr[@]}"; do
-    if [ "$s" != "0" ]; then
-      echo " !     Failed to build Play! application"
-      exit 1
-    fi
-  done
-}
-
 install_openjdk() {
-  # Simple stub that downloads and unpacks a JDK 1.8 from Azul or adoptopenjdk or similar
-  # You can customize this to match your needs
   local java_version=$1
   local build_dir=$2
   local bin_dir=$3
@@ -145,7 +118,6 @@ install_openjdk() {
   JDK_DIR="$build_dir/.jdk"
   mkdir -p "$JDK_DIR"
 
-  # For demo: download Azul Zulu JDK 8 Linux x64 tar.gz
   if [[ "$java_version" == "1.8" || "$java_version" == "8" ]]; then
     JDK_URL="https://github.com/Cliengo/heroku-buildpack-play-24/releases/download/heroku-24/jre-8u431-linux-x64.tar.gz"
   else
@@ -153,13 +125,18 @@ install_openjdk() {
     exit 1
   fi
 
-  # Download and extract
-  curl -sL "$JDK_URL" | tar xz -C "$JDK_DIR" --strip-components=1
+  echo "Downloading JDK from: $JDK_URL"
+  $CURL -sS -L --fail "$JDK_URL" | tar xz -C "$JDK_DIR" --strip-components=1
   echo "OpenJDK installed to $JDK_DIR"
 }
 
 install_play() {
   VER_TO_INSTALL=$1
+  if [ -z "$VER_TO_INSTALL" ]; then
+    echo "ERROR: VER_TO_INSTALL vacío, no se puede instalar Play!"
+    exit 1
+  fi
+
   PLAY_URL="https://s3.amazonaws.com/heroku-jvm-langpack-play/play-heroku-$VER_TO_INSTALL.tar.gz"
   PLAY_TAR_FILE="play-heroku.tar.gz"
 
@@ -167,12 +144,12 @@ install_play() {
 
   echo "-----> Installing Play! $VER_TO_INSTALL....."
 
-  status=$(curl --retry 3 --silent --head -L -w "%{http_code}" -o /dev/null "$PLAY_URL")
+  status=$($CURL --retry 3 --silent --head -L -w "%{http_code}" -o /dev/null "$PLAY_URL")
 
   if [ "$status" != "200" ]; then
     download_play_official "$VER_TO_INSTALL" "$PLAY_TAR_FILE"
   else
-    curl --retry 3 -s --max-time 150 -L "$PLAY_URL" -o "$PLAY_TAR_FILE"
+    $CURL --retry 3 -sS --max-time 150 -L --fail "$PLAY_URL" -o "$PLAY_TAR_FILE"
   fi
 
   if [ ! -f "$PLAY_TAR_FILE" ]; then
@@ -181,8 +158,7 @@ install_play() {
   fi
 
   if ! file "$PLAY_TAR_FILE" | grep -q gzip; then
-    error "Failed to install Play! framework or unsupported Play! framework version specified.
-Please review Dev Center for a list of supported versions."
+    echo "Failed to install Play! framework or unsupported Play! framework version specified."
     exit 1
   fi
 
@@ -191,8 +167,6 @@ Please review Dev Center for a list of supported versions."
   chmod +x "$PLAY_PATH/play"
   echo "Done installing Play!" | indent
 }
-
-
 
 remove_play() {
   local build_dir=$1
