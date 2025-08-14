@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
-BUILD_DIR=$1
+# bin/release <build-dir>
+BUILD_DIR="$1"
 
-cat <<EOF
+# (Opcional) variables por defecto visibles en la app
+cat <<'YAML'
 ---
 config_vars:
   #PLAY_OPTS: -Dprecompiled=true
-EOF
+YAML
 
+# Solo si la app NO trae Procfile, define el proceso web por defecto
 if [ ! -f "$BUILD_DIR/Procfile" ]; then
-cat <<'EOF'
+cat <<'YAML'
 default_process_types:
   web: ./.play/play run --http.port=$PORT $PLAY_OPTS
-EOF
+YAML
 fi
