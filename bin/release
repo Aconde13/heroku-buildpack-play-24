@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 # bin/release <build-dir>
-BUILD_DIR="$1"
 
-# (Opcional) variables por defecto visibles en la app
-cat <<'YAML'
+echo ">>> [DEBUG] bin/release ejecutado" >&2
+
+BUILD_DIR=$1
+
+cat <<EOF
 ---
 config_vars:
-  #PLAY_OPTS: -Dprecompiled=true
-YAML
+  #JAVA_OPTS: -Xmx384m -Xss512k -XX:+UseCompressedOops
+  #PLAY_OPTS: --%prod -Dprecompiled=true
+  
+addons:
+  #heroku-postgresql
+  
+EOF
 
-# Solo si la app NO trae Procfile, define el proceso web por defecto
-if [ ! -f "$BUILD_DIR/Procfile" ]; then
-cat <<'YAML'
+if [ ! -f $BUILD_DIR/Procfile ]; then
+cat <<EOF
 default_process_types:
-  web: ./.play/play run --http.port=$PORT $PLAY_OPTS
-YAML
+  web:    play run --http.port=\$PORT \$PLAY_OPTS
+EOF
 fi
