@@ -86,7 +86,7 @@ install_openjdk() {
   else
     echo "Unsupported Java version ${java_version}"
     exit 1
-  fi`
+  fi
 
   # Permitir override vía env var JDK_URL
   local EFFECTIVE_JDK_URL="${JDK_URL:-$JDK_URL_LOCAL}"
